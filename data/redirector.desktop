@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Redirector
+Comment=A URL redirector and cleaner for Linux desktop
+Exec=redirector --url %U
+Icon=redirector
+Terminal=false
+Type=Application
+Categories=Network;WebBrowser;GTK;
+MimeType=x-scheme-handler/http;x-scheme-handler/https;
+X-GNOME-GettextProject=redirector
+StartupNotify=true
