@@ -7,62 +7,45 @@
     flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { self, nixpkgs, rust-overlay, flake-utils, ... }:
+  outputs = { self, nixpkgs, rust-overlay, flake-utils }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs {
           inherit system;
-          overlays = [ (import rust-overlay) ];
+          overlays = [ rust-overlay.overlays.default ];
         };
+
         rustToolchain = pkgs.rust-bin.stable.latest.default;
+        rustPlatform = pkgs.makeRustPlatform {
+          cargo = rustToolchain;
+          rustc = rustToolchain;
+        };
+
+        inherit (pkgs) lib;
       in
       {
         devShells.default = pkgs.mkShell {
           packages = with pkgs; [
             rustToolchain
+            pkg-config
             gtk4
             glib
-            cairo
-            pixman
-            pango
-            atk
-            harfbuzz
             libadwaita
-            pkg-config
+            adwaita-icon-theme
           ];
 
-          # GTK4 build hints
           GTK4_MODULE_PATH = "${pkgs.adwaita-icon-theme}/share/icons/Adwaita";
-
-          # Let cargo build scripts find libraries
-          LD_LIBRARY_PATH = "${pkgs.glib}/lib:${pkgs.cairo}/lib:${pkgs.pixman}/lib:${pkgs.pango}/lib:${pkgs.atk}/lib:${pkgs.harfbuzz}/lib:${pkgs.gtk4}/lib";
+          LD_LIBRARY_PATH = lib.makeLibraryPath (with pkgs; [ gtk4 glib ]);
         };
 
-        packages.default = pkgs.rustPlatform.buildRustPackage {
+        packages.default = rustPlatform.buildRustPackage {
           pname = "redirector";
-          version = "0.1.0";
-
+          version = (builtins.fromTOML (builtins.readFile ./Cargo.toml)).package.version;
           src = ./.;
-
-          cargoLock = {
-            lockFile = ./Cargo.lock;
-          };
-
-          nativeBuildInputs = with pkgs; [
-            pkg-config
-          ];
-
-          buildInputs = with pkgs; [
-            gtk4
-            libadwaita
-            glib
-          ];
-
-          # Pre-existing test failures (unrelated to build)
+          cargoLock.lockFile = ./Cargo.lock;
+          nativeBuildInputs = [ pkgs.pkg-config ];
+          buildInputs = with pkgs; [ gtk4 libadwaita glib ];
           doCheck = false;
-
-          # Build in release mode
-          buildType = "release";
         };
       }
     );
