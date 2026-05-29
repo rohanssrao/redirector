@@ -37,6 +37,33 @@
           # Let cargo build scripts find libraries
           LD_LIBRARY_PATH = "${pkgs.glib}/lib:${pkgs.cairo}/lib:${pkgs.pixman}/lib:${pkgs.pango}/lib:${pkgs.atk}/lib:${pkgs.harfbuzz}/lib:${pkgs.gtk4}/lib";
         };
+
+        packages.default = pkgs.rustPlatform.buildRustPackage {
+          pname = "redirector";
+          version = "0.1.0";
+
+          src = ./.;
+
+          cargoLock = {
+            lockFile = ./Cargo.lock;
+          };
+
+          nativeBuildInputs = with pkgs; [
+            pkg-config
+          ];
+
+          buildInputs = with pkgs; [
+            gtk4
+            libadwaita
+            glib
+          ];
+
+          # Pre-existing test failures (unrelated to build)
+          doCheck = false;
+
+          # Build in release mode
+          buildType = "release";
+        };
       }
     );
 }

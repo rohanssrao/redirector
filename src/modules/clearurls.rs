@@ -10,7 +10,6 @@ use regex::Regex;
 use serde::Deserialize;
 use url::Url;
 
-use crate::config::find_config_file;
 use crate::modules::Module;
 use crate::url_data::{ModuleId, UrlData};
 
@@ -52,10 +51,12 @@ struct ClearUrlsCatalog {
 }
 
 impl ClearUrlsCatalog {
-    /// Load catalog from a JSON file.
-    fn from_file(path: &str) -> Result<Self, Box<dyn std::error::Error>> {
-        let data = std::fs::read_to_string(path)?;
-        let raw: ClearUrlsCatalogRaw = serde_json::from_str(&data)?;
+    /// Embedded ClearURLs catalog JSON (baked into the binary).
+    const EMBEDDED_DATA: &'static str = include_str!("../../data/clearurls.json");
+
+    /// Parse catalog from a JSON string.
+    fn from_str(data: &str) -> Result<Self, Box<dyn std::error::Error>> {
+        let raw: ClearUrlsCatalogRaw = serde_json::from_str(data)?;
 
         let mut rules = Vec::new();
 
@@ -126,11 +127,10 @@ impl ClearUrlsCatalog {
     }
 }
 
-/// Static parsed ClearURLs catalog (loaded once at startup)
+/// Static parsed ClearURLs catalog (embedded in the binary).
 static CATALOG: LazyLock<ClearUrlsCatalog> = LazyLock::new(|| {
-    let path = find_config_file("clearurls.json").unwrap_or_else(|| "clearurls.json".into());
-    ClearUrlsCatalog::from_file(path.to_str().unwrap()).unwrap_or_else(|e| {
-        eprintln!("Warning: Could not load clearurls.json: {e}");
+    ClearUrlsCatalog::from_str(ClearUrlsCatalog::EMBEDDED_DATA).unwrap_or_else(|e| {
+        eprintln!("Warning: Could not parse embedded clearurls.json: {e}");
         ClearUrlsCatalog { rules: Vec::new() }
     })
 });
