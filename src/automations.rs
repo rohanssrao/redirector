@@ -68,15 +68,18 @@ impl TryFrom<serde_json::Value> for AutomationRule {
     }
 }
 
-/// The automation catalog
-static CATALOG: LazyLock<AutomationCatalog> = LazyLock::new(|| {
+/// Load the automation catalog from the config file.
+pub fn load_catalog() -> AutomationCatalog {
     let path = find_config_file("automations.json")
         .unwrap_or_else(|| "automations.json".into());
     AutomationCatalog::from_file(path.to_str().unwrap()).unwrap_or_else(|e| {
         eprintln!("Warning: Could not load automations.json: {e}");
         AutomationCatalog::default()
     })
-});
+}
+
+/// The automation catalog (lazy-loaded for runtime use)
+static CATALOG: LazyLock<AutomationCatalog> = LazyLock::new(load_catalog);
 
 /// Parsed automation catalog (preserves insertion order)
 #[derive(Debug, Default)]
@@ -134,8 +137,32 @@ mod tests {
 
     #[test]
     fn test_catalog_loads() {
+        // Build a catalog from inline test data instead of live config
+        let json = r#"{
+            "Open Twitter/X in Tor": {
+                "regex": "twitter\\\\.com|xcancel\\\\.com",
+                "action": "open",
+                "browser": "torbrowser"
+            },
+            "Open everything else in LibreWolf": {
+                "regex": ".*",
+                "action": "open",
+                "browser": "librewolf"
+            }
+        }"#;
+        let raw: serde_json::Value = serde_json::from_str(json).unwrap();
+        let catalog = if let serde_json::Value::Object(map) = raw {
+            let rules: Vec<(String, AutomationRule)> = map
+                .into_iter()
+                .filter_map(|(name, value)| value.try_into().ok().map(|r| (name, r)))
+                .collect();
+            AutomationCatalog { rules }
+        } else {
+            AutomationCatalog::default()
+        };
+
         // The catch-all rule should match
-        let result = CATALOG.check("https://example.com");
+        let result = catalog.check("https://example.com");
         assert!(result.is_some(), "Default automation should match all URLs");
         let (name, rule) = result.unwrap();
         assert_eq!(name, "Open everything else in LibreWolf");
