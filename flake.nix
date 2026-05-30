@@ -29,13 +29,8 @@
             rustToolchain
             pkg-config
             gtk4
-            glib
             libadwaita
-            adwaita-icon-theme
           ];
-
-          GTK4_MODULE_PATH = "${pkgs.adwaita-icon-theme}/share/icons/Adwaita";
-          LD_LIBRARY_PATH = lib.makeLibraryPath (with pkgs; [ gtk4 glib ]);
         };
 
         packages.default = rustPlatform.buildRustPackage {
@@ -44,7 +39,7 @@
           src = ./.;
           cargoLock.lockFile = ./Cargo.lock;
           nativeBuildInputs = [ pkgs.pkg-config ];
-          buildInputs = with pkgs; [ gtk4 libadwaita glib ];
+          buildInputs = with pkgs; [ gtk4 libadwaita ];
           doCheck = false;
         };
       }
