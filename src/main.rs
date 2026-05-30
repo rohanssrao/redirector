@@ -176,251 +176,248 @@ fn show_dialog(original: &str, result: &pipeline::PipelineResult) {
         .application_id("com.redirector.app")
         .build();
 
-    let window = libadwaita::ApplicationWindow::builder()
-        .application(&app)
-        .title("Redirector")
-        .default_width(650)
-        .default_height(700)
-        .build();
-
-    let toast_overlay = libadwaita::ToastOverlay::new();
-    let toolbar_view = libadwaita::ToolbarView::new();
-    toolbar_view.add_top_bar(&libadwaita::HeaderBar::new());
-
-    let clamp = libadwaita::Clamp::builder()
-        .maximum_size(720)
-        .tightening_threshold(560)
-        .margin_top(24)
-        .margin_bottom(24)
-        .margin_start(24)
-        .margin_end(24)
-        .build();
-
-    let content = gtk4::Box::new(Orientation::Vertical, 18);
-    clamp.set_child(Some(&content));
-
-    // Title
-    let title = Label::new(Some("URL Processed"));
-    title.add_css_class("title-1");
-    title.set_halign(Align::Center);
-    content.append(&title);
-
-    // Original URL card
-    let orig_card = libadwaita::Bin::new();
-    orig_card.add_css_class("card");
-    let orig_vbox = gtk4::Box::new(Orientation::Vertical, 6);
-    orig_vbox.set_margin_top(12);
-    orig_vbox.set_margin_bottom(12);
-    orig_vbox.set_margin_start(12);
-    orig_vbox.set_margin_end(12);
-
-    let orig_cap = Label::new(Some("Original"));
-    orig_cap.add_css_class("caption-heading");
-    orig_cap.add_css_class("dim-label");
-    orig_cap.set_halign(Align::Start);
-
-    let orig_lbl = Label::new(Some(&original));
-    orig_lbl.add_css_class("monospace");
-    orig_lbl.set_wrap(true);
-    orig_lbl.set_selectable(true);
-    orig_lbl.set_halign(Align::Fill);
-    orig_lbl.set_xalign(0.0);
-
-    orig_vbox.append(&orig_cap);
-    orig_vbox.append(&orig_lbl);
-    orig_card.set_child(Some(&orig_vbox));
-    content.append(&orig_card);
-
-    // Arrow
-    let arrow = Label::new(Some("↓"));
-    arrow.add_css_class("dim-label");
-    arrow.set_halign(Align::Center);
-    content.append(&arrow);
-
-    // Result URL card
-    let res_card = libadwaita::Bin::new();
-    res_card.add_css_class("card");
-    let res_vbox = gtk4::Box::new(Orientation::Vertical, 6);
-    res_vbox.set_margin_top(12);
-    res_vbox.set_margin_bottom(12);
-    res_vbox.set_margin_start(12);
-    res_vbox.set_margin_end(12);
-
-    let res_cap = Label::new(Some("Result"));
-    res_cap.add_css_class("caption-heading");
-    res_cap.add_css_class("dim-label");
-    res_cap.set_halign(Align::Start);
-
-    let res_lbl = Label::new(Some(&result_url));
-    res_lbl.add_css_class("monospace");
-    res_lbl.set_wrap(true);
-    res_lbl.set_selectable(true);
-    res_lbl.set_halign(Align::Fill);
-    res_lbl.set_xalign(0.0);
-
-    res_vbox.append(&res_cap);
-    res_vbox.append(&res_lbl);
-    res_card.set_child(Some(&res_vbox));
-    content.append(&res_card);
-
-    // Changes log
-    if !changes.is_empty() {
-        let changes_title = Label::new(Some("Changes"));
-        changes_title.add_css_class("heading");
-        changes_title.set_halign(Align::Start);
-        changes_title.set_margin_top(6);
-        content.append(&changes_title);
-
-        let list = ListBox::new();
-        list.add_css_class("boxed-list");
-        list.set_selection_mode(SelectionMode::None);
-
-        for change in &changes {
-            let row = ListBoxRow::new();
-            row.set_activatable(false);
-
-            let row_box = gtk4::Box::new(Orientation::Vertical, 12);
-            row_box.set_margin_top(12);
-            row_box.set_margin_bottom(12);
-            row_box.set_margin_start(12);
-            row_box.set_margin_end(12);
-
-            let module = Label::new(Some(&change.module));
-            module.add_css_class("heading");
-            module.set_halign(Align::Start);
-
-            let before_box = gtk4::Box::new(Orientation::Vertical, 4);
-            let before_cap = Label::new(Some("Before"));
-            before_cap.add_css_class("caption");
-            before_cap.add_css_class("dim-label");
-            before_cap.set_halign(Align::Start);
-
-            let before_val = Label::new(Some(&change.original));
-            before_val.add_css_class("monospace");
-            before_val.add_css_class("dim-label");
-            before_val.set_wrap(true);
-            before_val.set_selectable(true);
-            before_val.set_halign(Align::Fill);
-            before_val.set_xalign(0.0);
-
-            before_box.append(&before_cap);
-            before_box.append(&before_val);
-
-            let after_box = gtk4::Box::new(Orientation::Vertical, 4);
-            let after_cap = Label::new(Some("After"));
-            after_cap.add_css_class("caption");
-            after_cap.add_css_class("dim-label");
-            after_cap.set_halign(Align::Start);
-
-            let after_val = Label::new(Some(&change.result));
-            after_val.add_css_class("monospace");
-            after_val.set_wrap(true);
-            after_val.set_selectable(true);
-            after_val.set_halign(Align::Fill);
-            after_val.set_xalign(0.0);
-
-            after_box.append(&after_cap);
-            after_box.append(&after_val);
-
-            row_box.append(&module);
-            row_box.append(&before_box);
-            row_box.append(&after_box);
-
-            row.set_child(Some(&row_box));
-            list.append(&row);
-        }
-
-        let scrolled = ScrolledWindow::builder()
-            .hscrollbar_policy(PolicyType::Never)
-            .vscrollbar_policy(PolicyType::Automatic)
-            .vexpand(true)
-            .child(&list)
+    // Create and present the window inside the activate signal,
+    // which runs after GApplication::startup has been emitted
+    app.connect_activate(move |app| {
+        let window = libadwaita::ApplicationWindow::builder()
+            .application(app)
+            .title("Redirector")
+            .default_width(650)
+            .default_height(700)
             .build();
 
-        content.append(&scrolled);
-    }
+        let toast_overlay = libadwaita::ToastOverlay::new();
+        let toolbar_view = libadwaita::ToolbarView::new();
+        toolbar_view.add_top_bar(&libadwaita::HeaderBar::new());
 
-    // Browser selector
-    let browser_group = libadwaita::PreferencesGroup::new();
-    browser_group.set_title("Destination");
+        let clamp = libadwaita::Clamp::builder()
+            .maximum_size(720)
+            .tightening_threshold(560)
+            .margin_top(24)
+            .margin_bottom(24)
+            .margin_start(24)
+            .margin_end(24)
+            .build();
 
-    let browser_names: Vec<String> = browsers.iter().map(|b| b.name.clone()).collect();
-    let string_list = gtk4::StringList::new(
-        &browser_names.iter().map(|s| s.as_str()).collect::<Vec<_>>()
-    );
+        let content = gtk4::Box::new(Orientation::Vertical, 18);
+        clamp.set_child(Some(&content));
 
-    let combo_row = libadwaita::ComboRow::new();
-    combo_row.set_title("Browser");
-    combo_row.set_model(Some(&string_list));
-    if !browser_names.is_empty() {
-        combo_row.set_selected(0);
-    }
+        // Title
+        let title = Label::new(Some("URL Processed"));
+        title.add_css_class("title-1");
+        title.set_halign(Align::Center);
+        content.append(&title);
 
-    browser_group.add(&combo_row);
-    content.append(&browser_group);
+        // Original URL card
+        let orig_card = libadwaita::Bin::new();
+        orig_card.add_css_class("card");
+        let orig_vbox = gtk4::Box::new(Orientation::Vertical, 6);
+        orig_vbox.set_margin_top(12);
+        orig_vbox.set_margin_bottom(12);
+        orig_vbox.set_margin_start(12);
+        orig_vbox.set_margin_end(12);
 
-    // Actions
-    let btn_box = gtk4::Box::new(Orientation::Horizontal, 8);
-    btn_box.set_halign(Align::End);
-    btn_box.set_margin_top(12);
+        let orig_cap = Label::new(Some("Original"));
+        orig_cap.add_css_class("caption-heading");
+        orig_cap.add_css_class("dim-label");
+        orig_cap.set_halign(Align::Start);
 
-    let copy_btn = Button::with_label("Copy URL");
-    let open_btn = Button::with_label("Open");
-    open_btn.add_css_class("suggested-action");
+        let orig_lbl = Label::new(Some(&original));
+        orig_lbl.add_css_class("monospace");
+        orig_lbl.set_wrap(true);
+        orig_lbl.set_selectable(true);
+        orig_lbl.set_halign(Align::Fill);
+        orig_lbl.set_xalign(0.0);
 
-    let browsers_for_open = browsers.clone();
-    let url_for_open = result_url.clone();
-    open_btn.connect_clicked(clone! {
-        #[weak]
-        window,
-        #[weak]
-        combo_row,
-        move |_| {
-            let idx = combo_row.selected() as usize;
-            let url = url_for_open.clone();
-            if idx < browsers_for_open.len() {
-                let _ = open_via_gio(&browsers_for_open[idx].desktop_id, &url);
-            } else {
-                let _ = open_url_default(&url);
+        orig_vbox.append(&orig_cap);
+        orig_vbox.append(&orig_lbl);
+        orig_card.set_child(Some(&orig_vbox));
+        content.append(&orig_card);
+
+        // Arrow
+        let arrow = Label::new(Some("↓"));
+        arrow.add_css_class("dim-label");
+        arrow.set_halign(Align::Center);
+        content.append(&arrow);
+
+        // Result URL card
+        let res_card = libadwaita::Bin::new();
+        res_card.add_css_class("card");
+        let res_vbox = gtk4::Box::new(Orientation::Vertical, 6);
+        res_vbox.set_margin_top(12);
+        res_vbox.set_margin_bottom(12);
+        res_vbox.set_margin_start(12);
+        res_vbox.set_margin_end(12);
+
+        let res_cap = Label::new(Some("Result"));
+        res_cap.add_css_class("caption-heading");
+        res_cap.add_css_class("dim-label");
+        res_cap.set_halign(Align::Start);
+
+        let res_lbl = Label::new(Some(&result_url));
+        res_lbl.add_css_class("monospace");
+        res_lbl.set_wrap(true);
+        res_lbl.set_selectable(true);
+        res_lbl.set_halign(Align::Fill);
+        res_lbl.set_xalign(0.0);
+
+        res_vbox.append(&res_cap);
+        res_vbox.append(&res_lbl);
+        res_card.set_child(Some(&res_vbox));
+        content.append(&res_card);
+
+        // Changes log
+        if !changes.is_empty() {
+            let changes_title = Label::new(Some("Changes"));
+            changes_title.add_css_class("heading");
+            changes_title.set_halign(Align::Start);
+            changes_title.set_margin_top(6);
+            content.append(&changes_title);
+
+            let list = ListBox::new();
+            list.add_css_class("boxed-list");
+            list.set_selection_mode(SelectionMode::None);
+
+            for change in &changes {
+                let row = ListBoxRow::new();
+                row.set_activatable(false);
+
+                let row_box = gtk4::Box::new(Orientation::Vertical, 12);
+                row_box.set_margin_top(12);
+                row_box.set_margin_bottom(12);
+                row_box.set_margin_start(12);
+                row_box.set_margin_end(12);
+
+                let module = Label::new(Some(&change.module));
+                module.add_css_class("heading");
+                module.set_halign(Align::Start);
+
+                let before_box = gtk4::Box::new(Orientation::Vertical, 4);
+                let before_cap = Label::new(Some("Before"));
+                before_cap.add_css_class("caption");
+                before_cap.add_css_class("dim-label");
+                before_cap.set_halign(Align::Start);
+
+                let before_val = Label::new(Some(&change.original));
+                before_val.add_css_class("monospace");
+                before_val.add_css_class("dim-label");
+                before_val.set_wrap(true);
+                before_val.set_selectable(true);
+                before_val.set_halign(Align::Fill);
+                before_val.set_xalign(0.0);
+
+                before_box.append(&before_cap);
+                before_box.append(&before_val);
+
+                let after_box = gtk4::Box::new(Orientation::Vertical, 4);
+                let after_cap = Label::new(Some("After"));
+                after_cap.add_css_class("caption");
+                after_cap.add_css_class("dim-label");
+                after_cap.set_halign(Align::Start);
+
+                let after_val = Label::new(Some(&change.result));
+                after_val.add_css_class("monospace");
+                after_val.set_wrap(true);
+                after_val.set_selectable(true);
+                after_val.set_halign(Align::Fill);
+                after_val.set_xalign(0.0);
+
+                after_box.append(&after_cap);
+                after_box.append(&after_val);
+
+                row_box.append(&module);
+                row_box.append(&before_box);
+                row_box.append(&after_box);
+
+                row.set_child(Some(&row_box));
+                list.append(&row);
             }
-            window.close();
-        }
-    });
 
-    let url_for_copy = result_url.clone();
-    copy_btn.connect_clicked(clone! {
-        #[weak]
-        toast_overlay,
-        move |_| {
-            if let Some(display) = gdk::Display::default() {
-                display.clipboard().set_text(&url_for_copy);
-                let toast = libadwaita::Toast::new("URL copied to clipboard");
-                toast.set_timeout(2);
-                toast_overlay.add_toast(toast);
+            let scrolled = ScrolledWindow::builder()
+                .hscrollbar_policy(PolicyType::Never)
+                .vscrollbar_policy(PolicyType::Automatic)
+                .vexpand(true)
+                .child(&list)
+                .build();
+
+            content.append(&scrolled);
+        }
+
+        // Browser selector
+        let browser_group = libadwaita::PreferencesGroup::new();
+        browser_group.set_title("Destination");
+
+        let browser_names: Vec<String> = browsers.iter().map(|b| b.name.clone()).collect();
+        let string_list = gtk4::StringList::new(
+            &browser_names.iter().map(|s| s.as_str()).collect::<Vec<_>>()
+        );
+
+        let combo_row = libadwaita::ComboRow::new();
+        combo_row.set_title("Browser");
+        combo_row.set_model(Some(&string_list));
+        if !browser_names.is_empty() {
+            combo_row.set_selected(0);
+        }
+
+        browser_group.add(&combo_row);
+        content.append(&browser_group);
+
+        // Actions
+        let btn_box = gtk4::Box::new(Orientation::Horizontal, 8);
+        btn_box.set_halign(Align::End);
+        btn_box.set_margin_top(12);
+
+        let copy_btn = Button::with_label("Copy URL");
+        let open_btn = Button::with_label("Open");
+        open_btn.add_css_class("suggested-action");
+
+        let browsers_for_open = browsers.clone();
+        let url_for_open = result_url.clone();
+        open_btn.connect_clicked(clone! {
+            #[weak]
+            window,
+            #[weak]
+            combo_row,
+            move |_| {
+                let idx = combo_row.selected() as usize;
+                let url = url_for_open.clone();
+                if idx < browsers_for_open.len() {
+                    let _ = open_via_gio(&browsers_for_open[idx].desktop_id, &url);
+                } else {
+                    let _ = open_url_default(&url);
+                }
+                window.close();
             }
-        }
+        });
+
+        let url_for_copy = result_url.clone();
+        copy_btn.connect_clicked(clone! {
+            #[weak]
+            toast_overlay,
+            move |_| {
+                if let Some(display) = gdk::Display::default() {
+                    display.clipboard().set_text(&url_for_copy);
+                    let toast = libadwaita::Toast::new("URL copied to clipboard");
+                    toast.set_timeout(2);
+                    toast_overlay.add_toast(toast);
+                }
+            }
+        });
+
+        btn_box.append(&copy_btn);
+        btn_box.append(&open_btn);
+        content.append(&btn_box);
+
+        toolbar_view.set_content(Some(&clamp));
+        toast_overlay.set_child(Some(&toolbar_view));
+        window.set_content(Some(&toast_overlay));
+
+        window.present();
     });
 
-    btn_box.append(&copy_btn);
-    btn_box.append(&open_btn);
-    content.append(&btn_box);
-
-    toolbar_view.set_content(Some(&clamp));
-    toast_overlay.set_child(Some(&toolbar_view));
-    window.set_content(Some(&toast_overlay));
-
-    let main_loop = glib::MainLoop::new(None, false);
-    window.connect_close_request(clone! {
-        #[strong]
-        main_loop,
-        move |_| {
-            main_loop.quit();
-            glib::Propagation::Proceed
-        }
-    });
-
-    window.present();
-    main_loop.run();
+    // Pass empty args so GTK doesn't re-process the CLI args (clap already handled them)
+    let args: &[&str] = &[];
+    let _ = app.run_with_args(args);
 }
 
 /// Open a URL using `gtk-launch` with a specific desktop ID.
